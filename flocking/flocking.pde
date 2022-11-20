@@ -1,11 +1,19 @@
 PImage birdSpritesheet;
 
-Bird bird;
+ArrayList<Bird> birds = new ArrayList<>();
 
 void setup() {
-  size(400, 400, P3D);
+  size(600, 600, P3D);
+  
   birdSpritesheet = loadImage("bird_sprite.png");
-  bird = new Bird(new Sprite(birdSpritesheet), new PVector(300, 300));
+  
+  for (int i=0; i<100; ++i) {
+      PVector randomPosition = new PVector(random(0, width), random(0, height));
+      Bird bird = new Bird(new Sprite(birdSpritesheet), randomPosition);
+      birds.add(bird);
+  }
+  //bird.velocity.y = 0;
+  //bird.velocity.x = 0;
 }
 
 int previousMillis;
@@ -18,6 +26,8 @@ void draw() {
   
   background(123, 216, 237);
   
-  bird.update(secondsElapsed);
-  bird.draw();
+  for (Bird bird : birds) {
+    bird.update(secondsElapsed);
+    bird.draw();
+  }
 }
