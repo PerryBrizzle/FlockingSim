@@ -1,10 +1,13 @@
 PImage birdSpritesheet;
+PImage panda;
+PVector pandaPos = new PVector(300, 400);
 
 ArrayList<Bird> birds = new ArrayList<>();
 
 enum DebugMode { OFF, ALL, SINGLE };
 DebugMode debugMode = DebugMode.OFF;
 
+SpatialGrid grid;
 
 // Bird/flocking tuning parameters
 float BIRD_MAX_SPEED = 200;  
@@ -21,8 +24,9 @@ void setup() {
   // Create window
   size(1000, 800, P3D);
   
-  // Load bird image asset
+  // Load image assets
   birdSpritesheet = loadImage("bird_sprite.png");
+  panda = loadImage("panda_sprite.png");
   
   // Create a group of birds at random positions
   for (int i=0; i<100; ++i) {
@@ -33,6 +37,9 @@ void setup() {
   
   // Pick one bird arbitrarily for single-bird debug view
   birds.get(0).isBirdZero = true;
+  
+  // Init spatial grid
+  grid = new SpatialGrid(50);
 }
 
 int previousMillis;
@@ -45,7 +52,7 @@ void draw() {
   BIRD_SEPARATION_RADIUS = 65f;
   BIRD_SEPARATION_STRENGTH = 100f;
   BIRD_ALIGNMENT_RADIUS = 100f;
-  BIRD_ALIGNMENT_STRENGTH = 50f;
+  BIRD_ALIGNMENT_STRENGTH = 200f;
   
   // Calculate delta time since last frame
   int millisElapsed = millis() - previousMillis;
@@ -55,6 +62,24 @@ void draw() {
   
   // Draw the sky
   background(123, 216, 237);
+  
+  // Populate spatial grid
+  grid.empty();
+  for (Bird bird : birds) {
+    grid.add(bird, bird.position.x, bird.position.y);
+  }
+  
+  imageMode(CENTER);
+  image(panda, pandaPos.x, pandaPos.y);
+  
+  if (debugMode != DebugMode.OFF) {
+    grid.debugDraw();
+  }
+  
+  // Calculate forces on birds
+  for (Bird bird : birds) {
+    bird.calculateAcceleration(grid);
+  }
   
   // Update and draw the birds
   for (Bird bird : birds) {

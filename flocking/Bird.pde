@@ -22,8 +22,6 @@ class Bird {
   public void update(float secondsElapsed, ArrayList<Bird> allBirds) {
     sprite.updateAnimation(secondsElapsed);
     
-    calculateAcceleration(allBirds);
-        
     // Acceleration changes our velocity
     velocity.add(PVector.mult(acceleration, secondsElapsed));
     
@@ -36,28 +34,37 @@ class Bird {
     position.add(PVector.mult(velocity, secondsElapsed));
     
     // Wrap birds around the grid
-    if (position.x > width) { position.x -= width; }
+    if (position.x >= width) { position.x -= width; }
     else if (position.x < 0) { position.x += width; }
     
-    if (position.y > height) { position.y -= height; }
+    if (position.y >= height) { position.y -= height; }
     else if (position.y < 0) { position.y += height; }
   }
   
-  public void calculateAcceleration(ArrayList<Bird> allBirds) {
+  public void calculateAcceleration(SpatialGrid grid) {
     // Calculate acceleration
     acceleration.set(0,0);
-    
-    
+        
     // Steer towards mouse position
     PVector target = mousePressed ? new PVector(mouseX, mouseY) : new PVector (width/2, height/2);
     PVector vectorToTarget = target.sub(position);
     PVector accelerationTowardsTarget = vectorToTarget.setMag(BIRD_MOUSE_FOLLOW_STRENGTH);
     acceleration.add(accelerationTowardsTarget);
     
-    
+    // Avoid panda
+    float PANDA_SIZE = 32;
+    float PANDA_AVOID_STRENGTH = 5000f;
+    PVector vectorToPanda = PVector.sub(pandaPos, position);
+    float squareDistanceToPanda = vectorToPanda.magSq();
+    if(squareDistanceToPanda < PANDA_SIZE * PANDA_SIZE) {
+      float pandaAvoidAmount = map(squareDistanceToPanda, 0, PANDA_SIZE*PANDA_SIZE, PANDA_AVOID_STRENGTH, 0);
+      acceleration.add(vectorToPanda.setMag(-pandaAvoidAmount));
+            
+    }
+        
     // Seperation - avoid neighbouring birds
     separationForce.set(0, 0);
-    for (Bird otherBird : allBirds) {
+    for (Bird otherBird : grid.query(position.x, position.y, BIRD_SEPARATION_RADIUS)) {
       
       // Don't compare a bird with itself
       if (otherBird == this) continue;
@@ -80,7 +87,7 @@ class Bird {
     PVector averageVelocityOfNeighbours = new PVector(0, 0);
     int alignmentNeighbourCount = 0;
     
-    for (Bird otherBird : allBirds) {
+    for (Bird otherBird : grid.query(position.x, position.y, BIRD_ALIGNMENT_RADIUS)) {
       
       // Don't compare a bird with itself
       if (otherBird == this) continue;
